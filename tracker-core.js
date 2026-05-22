@@ -42,30 +42,30 @@
 const TrackerCore = (() => {
 
     // ── Constants ──────────────────────────────────────────────────────────
-    const WATCH_THRESHOLD  = 0.85;   // fraction of duration = auto-like
-    const POLL_MS          = 2500;   // gallery re-scan interval (ms)
-    const CURSOR_HIDE_MS   = 2500;   // idle ms before cursor vanishes
-    const BLACKLIST_KEY    = "__blacklist__";
+    const WATCH_THRESHOLD = 0.85;   // fraction of duration = auto-like
+    const POLL_MS = 2500;   // gallery re-scan interval (ms)
+    const CURSOR_HIDE_MS = 2500;   // idle ms before cursor vanishes
+    const BLACKLIST_KEY = "__blacklist__";
 
     const STATUS = {
-        QUEUED:   "queued",
-        LIKED:    "liked",
+        QUEUED: "queued",
+        LIKED: "liked",
         DISLIKED: "disliked",
     };
 
     const COLOR = {
-        [STATUS.QUEUED]:   "#68B0AB",
-        [STATUS.LIKED]:    "green",
+        [STATUS.QUEUED]: "#68B0AB",
+        [STATUS.LIKED]: "green",
         [STATUS.DISLIKED]: "red",
     };
 
     // ── Module-level state ─────────────────────────────────────────────────
-    let _storage   = null;
-    let _adapter   = null;
-    let _started   = false;
+    let _storage = null;
+    let _adapter = null;
+    let _started = false;
     let _autoLiked = false;
     let _watchedSeconds = 0;
-    let _lastTime  = 0;
+    let _lastTime = 0;
 
     // ══════════════════════════════════════════════════════════════════════
     // Blacklist sub-module
@@ -130,22 +130,22 @@ const TrackerCore = (() => {
     function _getStatus(videoId) {
         const raw = _storage.get(videoId);
         if (!raw) return null;
-        try   { return JSON.parse(raw); }
+        try { return JSON.parse(raw); }
         catch { return null; }
     }
 
     // ── Video-page logic ────────────────────────────────────────────────────
 
     function _initVideoPage() {
-        const id    = _adapter.getVideoId();
+        const id = _adapter.getVideoId();
         if (!id) return;
 
         const title = _adapter.getTitleElement();
-        const data  = _getStatus(id);
+        const data = _getStatus(id);
         let notSeen = true;
 
         if (data) {
-            if (data.status === STATUS.LIKED)    { _autoLiked = true; notSeen = false; }
+            if (data.status === STATUS.LIKED) { _autoLiked = true; notSeen = false; }
             if (data.status === STATUS.DISLIKED) { notSeen = false; }
             if (title && COLOR[data.status]) title.style.color = COLOR[data.status];
         }
@@ -184,6 +184,8 @@ const TrackerCore = (() => {
     }
 
     function _trackWatch(video, id, title) {
+        console.debug("[tracker] timeupdate: current=%.1f last=%.1f watched=%.1f",
+            video.currentTime, _lastTime, _watchedSeconds);
         if (!video.duration) return;
         if (video.currentTime > _lastTime) {
             _watchedSeconds += video.currentTime - _lastTime;
@@ -200,6 +202,7 @@ const TrackerCore = (() => {
     // ── Gallery / recommendation logic ─────────────────────────────────────
 
     function _scanGallery() {
+        console.debug("[tracker] scanning gallery...");
         // 1. Colour video-link titles by watch status
         _adapter.getRecommendedLinks().forEach(({ url, titleEl, cardEl }) => {
             const videoId = _adapter.getVideoIdFromUrl(url);
@@ -243,18 +246,18 @@ const TrackerCore = (() => {
 
         // Minimal, unobtrusive style — adapters can override via CSS
         Object.assign(btn.style, {
-            position:     "absolute",
-            bottom:       "4px",
-            right:        "4px",
-            zIndex:       "9999",
-            padding:      "2px 6px",
-            fontSize:     "11px",
-            cursor:       "pointer",
-            background:   "rgba(0,0,0,0.65)",
-            color:        "#fff",
-            border:       "none",
+            position: "absolute",
+            bottom: "4px",
+            right: "4px",
+            zIndex: "9999",
+            padding: "2px 6px",
+            fontSize: "11px",
+            cursor: "pointer",
+            background: "rgba(0,0,0,0.65)",
+            color: "#fff",
+            border: "none",
             borderRadius: "3px",
-            lineHeight:   "1.4",
+            lineHeight: "1.4",
         });
 
         btn.addEventListener("click", e => {
@@ -273,7 +276,7 @@ const TrackerCore = (() => {
             clearTimeout(timer);
             timer = setTimeout(() => { element.style.cursor = "none"; }, delayMs);
         };
-        element.addEventListener("mousemove",  show);
+        element.addEventListener("mousemove", show);
         element.addEventListener("mouseenter", show);
         element.addEventListener("mouseleave", () => {
             element.style.cursor = "default";
@@ -284,6 +287,7 @@ const TrackerCore = (() => {
     // ── Public API ──────────────────────────────────────────────────────────
 
     function init(adapter, storage) {
+        console.log("[tracker] initializing...");
         _adapter = adapter;
         _storage = storage;
 
