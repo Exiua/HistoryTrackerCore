@@ -157,6 +157,10 @@ const TrackerCore = (() => {
         });
 
         _adapter.onDislikeClick?.(() => {
+            // Allow dislike to override any state, including a prior like.
+            // Clear _autoLiked so pagehide won't incorrectly skip writing on
+            // a future visit where the user leaves early after having disliked.
+            _autoLiked = false;
             _setStatus(id, STATUS.DISLIKED);
             if (title) title.style.color = COLOR[STATUS.DISLIKED];
         });
@@ -176,7 +180,12 @@ const TrackerCore = (() => {
             });
 
             window.addEventListener("pagehide", () => {
-                if (_started && !_autoLiked) {
+                // Only mark DISLIKED when leaving a video that was merely queued
+                // (i.e. opened but not fully watched and not manually rated).
+                // Never downgrade LIKED → DISLIKED just because the user left early,
+                // and never redundantly overwrite an existing DISLIKED.
+                const current = _getStatus(id);
+                if (_started && current?.status === STATUS.QUEUED) {
                     _setStatus(id, STATUS.DISLIKED);
                 }
             });
@@ -287,7 +296,6 @@ const TrackerCore = (() => {
     // ── Public API ──────────────────────────────────────────────────────────
 
     function init(adapter, storage) {
-        console.log("[tracker] initializing...");
         _adapter = adapter;
         _storage = storage;
 
