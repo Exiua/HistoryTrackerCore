@@ -147,13 +147,13 @@ const TrackerCore = (() => {
         if (data) {
             if (data.status === STATUS.LIKED) { _autoLiked = true; notSeen = false; }
             if (data.status === STATUS.DISLIKED) { notSeen = false; }
-            if (title && COLOR[data.status]) title.style.color = COLOR[data.status];
+            if (title && COLOR[data.status]) title.style.setProperty("color", COLOR[data.status], "important");
         }
 
         _adapter.onLikeClick?.(() => {
             _autoLiked = true;
             _setStatus(id, STATUS.LIKED);
-            if (title) title.style.color = COLOR[STATUS.LIKED];
+            if (title) title.style.setProperty("color", COLOR[STATUS.LIKED], "important");
         });
 
         _adapter.onDislikeClick?.(() => {
@@ -162,7 +162,7 @@ const TrackerCore = (() => {
             // a future visit where the user leaves early after having disliked.
             _autoLiked = false;
             _setStatus(id, STATUS.DISLIKED);
-            if (title) title.style.color = COLOR[STATUS.DISLIKED];
+            if (title) title.style.setProperty("color", COLOR[STATUS.DISLIKED], "important");
         });
 
         const overlay = _adapter.getVideoOverlayElement?.();
@@ -204,7 +204,7 @@ const TrackerCore = (() => {
         if (_watchedSeconds / video.duration >= WATCH_THRESHOLD && !_autoLiked) {
             _autoLiked = true;
             _setStatus(id, STATUS.LIKED);
-            if (title) title.style.color = COLOR[STATUS.LIKED];
+            if (title) title.style.setProperty("color", COLOR[STATUS.LIKED], "important");
         }
     }
 
@@ -219,7 +219,7 @@ const TrackerCore = (() => {
 
             const data = _getStatus(videoId);
             if (data && titleEl && COLOR[data.status]) {
-                titleEl.style.color = COLOR[data.status];
+                titleEl.style.setProperty("color", COLOR[data.status], "important");
             }
         });
 
