@@ -147,18 +147,22 @@ const TrackerCore = (() => {
         if (data) {
             if (data.status === STATUS.LIKED) { _autoLiked = true; notSeen = false; }
             if (data.status === STATUS.DISLIKED) { notSeen = false; }
-            if (title && COLOR[data.status]) title.style.color = COLOR[data.status];
+            if (title && COLOR[data.status]) title.style.setProperty("color", COLOR[data.status], "important");
         }
 
         _adapter.onLikeClick?.(() => {
             _autoLiked = true;
             _setStatus(id, STATUS.LIKED);
-            if (title) title.style.color = COLOR[STATUS.LIKED];
+            if (title) title.style.setProperty("color", COLOR[STATUS.LIKED], "important");
         });
 
         _adapter.onDislikeClick?.(() => {
+            // Allow dislike to override any state, including a prior like.
+            // Clear _autoLiked so pagehide won't incorrectly skip writing on
+            // a future visit where the user leaves early after having disliked.
+            _autoLiked = false;
             _setStatus(id, STATUS.DISLIKED);
-            if (title) title.style.color = COLOR[STATUS.DISLIKED];
+            if (title) title.style.setProperty("color", COLOR[STATUS.DISLIKED], "important");
         });
 
         const overlay = _adapter.getVideoOverlayElement?.();
@@ -176,7 +180,12 @@ const TrackerCore = (() => {
             });
 
             window.addEventListener("pagehide", () => {
-                if (_started && !_autoLiked) {
+                // Only mark DISLIKED when leaving a video that was merely queued
+                // (i.e. opened but not fully watched and not manually rated).
+                // Never downgrade LIKED → DISLIKED just because the user left early,
+                // and never redundantly overwrite an existing DISLIKED.
+                const current = _getStatus(id);
+                if (_started && current?.status === STATUS.QUEUED) {
                     _setStatus(id, STATUS.DISLIKED);
                 }
             });
@@ -195,7 +204,7 @@ const TrackerCore = (() => {
         if (_watchedSeconds / video.duration >= WATCH_THRESHOLD && !_autoLiked) {
             _autoLiked = true;
             _setStatus(id, STATUS.LIKED);
-            if (title) title.style.color = COLOR[STATUS.LIKED];
+            if (title) title.style.setProperty("color", COLOR[STATUS.LIKED], "important");
         }
     }
 
@@ -210,7 +219,7 @@ const TrackerCore = (() => {
 
             const data = _getStatus(videoId);
             if (data && titleEl && COLOR[data.status]) {
-                titleEl.style.color = COLOR[data.status];
+                titleEl.style.setProperty("color", COLOR[data.status], "important");
             }
         });
 
@@ -287,7 +296,6 @@ const TrackerCore = (() => {
     // ── Public API ──────────────────────────────────────────────────────────
 
     function init(adapter, storage) {
-        console.log("[tracker] initializing...");
         _adapter = adapter;
         _storage = storage;
 
